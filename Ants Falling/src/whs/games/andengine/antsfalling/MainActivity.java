@@ -208,7 +208,10 @@ public class MainActivity extends SimpleBaseGameActivity implements SensorEventL
 		 
 		 camera.setHUD(hud);
 
+		 
 		return scene;
+		
+		
 	}
 
 	/* (non-Javadoc)
