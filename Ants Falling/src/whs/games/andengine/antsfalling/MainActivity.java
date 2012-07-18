@@ -27,16 +27,24 @@ import org.andengine.opengl.texture.atlas.bitmap.BuildableBitmapTextureAtlas;
 import org.andengine.opengl.texture.atlas.bitmap.source.IBitmapTextureAtlasSource;
 import org.andengine.opengl.texture.atlas.buildable.builder.BlackPawnTextureAtlasBuilder;
 import org.andengine.opengl.texture.atlas.buildable.builder.ITextureAtlasBuilder.TextureAtlasBuilderException;
+import org.andengine.opengl.texture.region.ITextureRegion;
 import org.andengine.opengl.texture.region.TiledTextureRegion;
 import org.andengine.ui.activity.SimpleBaseGameActivity;
 import org.andengine.util.debug.Debug;
+import org.andengine.util.math.MathUtils;
+
+import org.andengine.engine.camera.hud.controls.AnalogOnScreenControl;
+import org.andengine.engine.camera.hud.controls.AnalogOnScreenControl.IAnalogOnScreenControlListener;
+import org.andengine.engine.camera.hud.controls.BaseOnScreenControl;
 
 import android.annotation.SuppressLint;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
+import android.opengl.GLES20;
 import android.util.DisplayMetrics;
+
 
 /**
  * @author WiLL
@@ -68,6 +76,12 @@ public class MainActivity extends SimpleBaseGameActivity {
 
 	// TESTES
 	AnimatedSprite helicopter;
+	
+	private BitmapTextureAtlas mOnScreenControlTexture;
+	private ITextureRegion mOnScreenControlBaseTextureRegion;
+	private ITextureRegion mOnScreenControlKnobTextureRegion;
+	
+	private final Scene scene = new Scene();
 
 	private Font mFont;
 
@@ -137,11 +151,24 @@ public class MainActivity extends SimpleBaseGameActivity {
 		} catch (TextureAtlasBuilderException e) {
 			Debug.e(e);
 		}
+		
+		
+		//Controles
+		this.mOnScreenControlTexture = new BitmapTextureAtlas(
+				this.getTextureManager(), 256, 128, TextureOptions.BILINEAR);
+		this.mOnScreenControlBaseTextureRegion = BitmapTextureAtlasTextureRegionFactory
+				.createFromAsset(this.mOnScreenControlTexture, this,
+						"onscreen_control_base.png", 0, 0);
+		this.mOnScreenControlKnobTextureRegion = BitmapTextureAtlasTextureRegionFactory
+				.createFromAsset(this.mOnScreenControlTexture, this,
+						"onscreen_control_knob.png", 128, 0);
+		this.mOnScreenControlTexture.load();
+		
 
 		// Propriedade Texto
 		this.mFont = FontFactory.create(this.getFontManager(),
 				this.getTextureManager(), 256, 256, TextureOptions.BILINEAR,
-				Typeface.create(Typeface.DEFAULT, Typeface.BOLD), 20);
+				Typeface.create(Typeface.DEFAULT, Typeface.BOLD), 10);
 		this.mFont.load();
 
 	}
@@ -155,7 +182,7 @@ public class MainActivity extends SimpleBaseGameActivity {
 	protected Scene onCreateScene() {
 		this.mEngine.registerUpdateHandler(new FPSLogger());
 
-		final Scene scene = new Scene();
+		//scene = new Scene();
 		scene.setBackground(new Background(0.09804f, 0.6274f, 0.8784f));
 
 		/* Quickly twinkling face. */
@@ -169,11 +196,18 @@ public class MainActivity extends SimpleBaseGameActivity {
 				this.getVertexBufferObjectManager());
 		helicopter.animate(new long[] { 100, 100 }, 1, 2, true);
 
+		//Amarra camera a entidade para segui-la		
+		camera.setChaseEntity(helicopter);
+		
 		helicopter.registerEntityModifier(new LoopEntityModifier(
 				new MoveModifier(10f, helicopter.getX(), 0, helicopter.getY(),
 						camera.getHeight()
 								- this.mHelicopterTextureRegion.getHeight())));
 
+		
+		
+
+		
 		scene.attachChild(helicopter);
 
 		/* Snapdragon. */
@@ -194,8 +228,12 @@ public class MainActivity extends SimpleBaseGameActivity {
 				this.mBananaTextureRegion, this.getVertexBufferObjectManager());
 		banana.animate(100);
 
-		banana.registerEntityModifier(new MoveModifier(5f, banana.getX(), 0,
-				banana.getY(), 0));
+		banana.registerEntityModifier(new LoopEntityModifier(
+				new MoveModifier(5f, banana.getX(), helicopter.getX(),
+						banana.getY(), helicopter.getY())));
+		
+//		banana.registerEntityModifier(new MoveModifier(5f, banana.getX(), helicopter.getX(),
+//				banana.getY(), helicopter.getY()));
 
 		scene.attachChild(banana);
 
@@ -214,10 +252,16 @@ public class MainActivity extends SimpleBaseGameActivity {
 		final Text fpsText = new Text(camera.getWidth()/2, 0,
 				this.mFont, "FPS:", "FPS: XXXXX".length(),
 				this.getVertexBufferObjectManager());
+		
+		
 
 		scene.attachChild(elapsedText);
 		scene.attachChild(fpsText);
-
+		
+//		helicopter.attachChild(elapsedText);
+//		helicopter.attachChild(fpsText);
+		
+		
 		scene.registerUpdateHandler(new TimerHandler(1 / 20.0f, true,
 				new ITimerCallback() {
 					@Override
@@ -232,6 +276,10 @@ public class MainActivity extends SimpleBaseGameActivity {
 					}
 				}));
 
+		
+		
+		this.initOnScreenControls();
+		
 		return scene;
 
 	}
@@ -256,7 +304,39 @@ public class MainActivity extends SimpleBaseGameActivity {
 	// ===========================================================
 	// Methods
 	// ===========================================================
+	private void initOnScreenControls() {
+		final AnalogOnScreenControl analogOnScreenControl = new AnalogOnScreenControl(
+				0, this.camera.getHeight()
+						- this.mOnScreenControlBaseTextureRegion.getHeight(), this.camera, this.mOnScreenControlBaseTextureRegion, this.mOnScreenControlKnobTextureRegion, 0.1f, this.getVertexBufferObjectManager(), new IAnalogOnScreenControlListener() {
+			@Override
+			public void onControlChange(final BaseOnScreenControl pBaseOnScreenControl, final float pValueX, final float pValueY) {
+				//final Body carBody = RacerGameActivity.this.mCarBody;
 
+				//final Vector2 velocity = Vector2Pool.obtain(pValueX * 5, pValueY * 5);
+				//carBody.setLinearVelocity(velocity);
+				//Vector2Pool.recycle(velocity);
+
+				final float rotationInRad = (float)Math.atan2(-pValueX, pValueY);
+				//carBody.setTransform(carBody.getWorldCenter(), rotationInRad);
+
+				MainActivity.this.helicopter.setRotation(MathUtils.radToDeg(rotationInRad));
+				//MainActivity.this.scene.setRotation(MathUtils.radToDeg(rotationInRad));
+			}
+
+			@Override
+			public void onControlClick(final AnalogOnScreenControl pAnalogOnScreenControl) {
+				/* Nothing. */
+			}
+		});
+		analogOnScreenControl.getControlBase().setBlendFunction(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+		analogOnScreenControl.getControlBase().setAlpha(0.5f);
+		//		analogOnScreenControl.getControlBase().setScaleCenter(0, 128);
+		//		analogOnScreenControl.getControlBase().setScale(0.75f);
+		//		analogOnScreenControl.getControlKnob().setScale(0.75f);
+		analogOnScreenControl.refreshControlKnobPosition();
+
+		this.scene.setChildScene(analogOnScreenControl);
+	}
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
