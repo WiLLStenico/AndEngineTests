@@ -5,17 +5,21 @@ package whs.games.andengine.antsfalling;
 
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.camera.hud.HUD;
+import org.andengine.engine.handler.timer.ITimerCallback;
+import org.andengine.engine.handler.timer.TimerHandler;
 import org.andengine.engine.options.EngineOptions;
 import org.andengine.engine.options.ScreenOrientation;
 import org.andengine.engine.options.resolutionpolicy.RatioResolutionPolicy;
+import org.andengine.entity.modifier.LoopEntityModifier;
 import org.andengine.entity.modifier.MoveModifier;
 import org.andengine.entity.scene.Scene;
 import org.andengine.entity.scene.background.Background;
 import org.andengine.entity.sprite.AnimatedSprite;
 import org.andengine.entity.text.Text;
+import org.andengine.entity.util.FPSCounter;
 import org.andengine.entity.util.FPSLogger;
-import org.andengine.opengl.font.FontManager;
-import org.andengine.opengl.font.IFont;
+import org.andengine.opengl.font.Font;
+import org.andengine.opengl.font.FontFactory;
 import org.andengine.opengl.texture.TextureOptions;
 import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlas;
 import org.andengine.opengl.texture.atlas.bitmap.BitmapTextureAtlasTextureRegionFactory;
@@ -24,12 +28,10 @@ import org.andengine.opengl.texture.atlas.bitmap.source.IBitmapTextureAtlasSourc
 import org.andengine.opengl.texture.atlas.buildable.builder.BlackPawnTextureAtlasBuilder;
 import org.andengine.opengl.texture.atlas.buildable.builder.ITextureAtlasBuilder.TextureAtlasBuilderException;
 import org.andengine.opengl.texture.region.TiledTextureRegion;
-import org.andengine.opengl.vbo.VertexBufferObjectManager;
-import org.andengine.opengl.vbo.attribute.VertexBufferObjectAttribute;
 import org.andengine.ui.activity.SimpleBaseGameActivity;
 import org.andengine.util.debug.Debug;
 
-import android.graphics.Color;
+import android.annotation.SuppressLint;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -40,7 +42,7 @@ import android.util.DisplayMetrics;
  * @author WiLL
  * 
  */
-public class MainActivity extends SimpleBaseGameActivity implements SensorEventListener  {
+public class MainActivity extends SimpleBaseGameActivity {
 
 	// ===========================================================
 	// Constants
@@ -63,11 +65,13 @@ public class MainActivity extends SimpleBaseGameActivity implements SensorEventL
 	private TiledTextureRegion mFaceTextureRegion;
 
 	private TiledTextureRegion mFrogTextureRegion;
-	
-	//TESTES
+
+	// TESTES
 	AnimatedSprite helicopter;
-	
-	//==============
+
+	private Font mFont;
+
+	// ==============
 
 	// ===========================================================
 	// Methods for/from SuperClass/Interfaces
@@ -134,6 +138,12 @@ public class MainActivity extends SimpleBaseGameActivity implements SensorEventL
 			Debug.e(e);
 		}
 
+		// Propriedade Texto
+		this.mFont = FontFactory.create(this.getFontManager(),
+				this.getTextureManager(), 256, 256, TextureOptions.BILINEAR,
+				Typeface.create(Typeface.DEFAULT, Typeface.BOLD), 20);
+		this.mFont.load();
+
 	}
 
 	/*
@@ -155,21 +165,15 @@ public class MainActivity extends SimpleBaseGameActivity implements SensorEventL
 		scene.attachChild(face);
 
 		/* Continuously flying helicopter. */
-		helicopter = new AnimatedSprite(320, 50,
-				this.mHelicopterTextureRegion,
+		helicopter = new AnimatedSprite(320, 50, this.mHelicopterTextureRegion,
 				this.getVertexBufferObjectManager());
 		helicopter.animate(new long[] { 100, 100 }, 1, 2, true);
 
-//		helicopter.registerEntityModifier(new LoopEntityModifier(new MoveModifier(10f, helicopter
-//				.getX(), 0, helicopter.getY(), camera.getHeight()
-//				- this.mHelicopterTextureRegion.getHeight())));
+		helicopter.registerEntityModifier(new LoopEntityModifier(
+				new MoveModifier(10f, helicopter.getX(), 0, helicopter.getY(),
+						camera.getHeight()
+								- this.mHelicopterTextureRegion.getHeight())));
 
-		helicopter.registerEntityModifier(new MoveModifier(10f, helicopter
-				.getX(), 0, helicopter.getY(), camera.getHeight()
-				- this.mHelicopterTextureRegion.getHeight()));
-		
-
-		
 		scene.attachChild(helicopter);
 
 		/* Snapdragon. */
@@ -200,76 +204,59 @@ public class MainActivity extends SimpleBaseGameActivity implements SensorEventL
 				this.mFrogTextureRegion, this.getVertexBufferObjectManager());
 		frog.animate(500);
 		scene.attachChild(frog);
-		
-		//Text t = new Text(0, 0, font, "Score:0123456789", vbo);
-		
-		 HUD hud = new HUD();
-		 hud.attachChild(new Helicopter());
-		 
-		 camera.setHUD(hud);
 
-		 
+		final FPSCounter fpsCounter = new FPSCounter();
+		this.mEngine.registerUpdateHandler(fpsCounter);
+
+		final Text elapsedText = new Text(0, 0, this.mFont, "Seconds elapsed:",
+				"Seconds elapsed: XXXXX".length(),
+				this.getVertexBufferObjectManager());
+		final Text fpsText = new Text(camera.getWidth()/2, 0,
+				this.mFont, "FPS:", "FPS: XXXXX".length(),
+				this.getVertexBufferObjectManager());
+
+		scene.attachChild(elapsedText);
+		scene.attachChild(fpsText);
+
+		scene.registerUpdateHandler(new TimerHandler(1 / 20.0f, true,
+				new ITimerCallback() {
+					@Override
+					public void onTimePassed(final TimerHandler pTimerHandler) {
+
+						elapsedText.setText("Seconds elapsed: "
+								+ String.format("%.3f",
+										MainActivity.this.mEngine
+												.getSecondsElapsedTotal()));
+						fpsText.setText("FPS: "
+								+ String.format("%.3f", fpsCounter.getFPS()));
+					}
+				}));
+
 		return scene;
-		
-		
+
 	}
-
-	/* (non-Javadoc)
-	 * @see android.hardware.SensorEventListener#onAccuracyChanged(android.hardware.Sensor, int)
-	 */
-	@Override
-	public void onAccuracyChanged(Sensor arg0, int arg1) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	/* (non-Javadoc)
-	 * @see android.hardware.SensorEventListener#onSensorChanged(android.hardware.SensorEvent)
-	 */
-	@Override
-	public void onSensorChanged(SensorEvent event) {
-		// TODO Auto-generated method stub
-		// check sensor type
-				if(event.sensor.getType()==Sensor.TYPE_ACCELEROMETER){
-
-					// assign directions
-					float x=event.values[0];
-					float y=event.values[1];
-					float z=event.values[2];
-
-					helicopter.setRotation(x);
-				}
-		
-	}
-
-	
-
-//	/* (non-Javadoc)
-//	 * @see org.andengine.input.sensor.acceleration.IAccelerationListener#onAccelerationChanged(org.andengine.input.sensor.acceleration.AccelerationData)
-//	 */
-//	@Override
-//	 public void onAccelerationChanged(final AccelerationData pAccelerationData) {
-//	 
-//		helicopter.registerEntityModifier(new MoveModifier(10f, helicopter
-//				.getX(), 0, helicopter.getY(), camera.getHeight()
-//				- this.mHelicopterTextureRegion.getHeight()));
-//				
-//		helicopter.setRotation(-1);
-//		
-//		
-//	       
-//	 }
-	
-	
+	// /* (non-Javadoc)
+	// * @see
+	// org.andengine.input.sensor.acceleration.IAccelerationListener#onAccelerationChanged(org.andengine.input.sensor.acceleration.AccelerationData)
+	// */
+	// @Override
+	// public void onAccelerationChanged(final AccelerationData
+	// pAccelerationData) {
+	//
+	// helicopter.registerEntityModifier(new MoveModifier(10f, helicopter
+	// .getX(), 0, helicopter.getY(), camera.getHeight()
+	// - this.mHelicopterTextureRegion.getHeight()));
+	//
+	// helicopter.setRotation(-1);
+	//
+	//
+	//
+	// }
 
 	// ===========================================================
 	// Methods
 	// ===========================================================
 
-	
-	
-	
-	
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
