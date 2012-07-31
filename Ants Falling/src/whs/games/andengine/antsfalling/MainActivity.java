@@ -61,6 +61,8 @@ public class MainActivity extends SimpleBaseGameActivity {
 	// ===========================================================
 
 	private static Camera camera;
+	
+	private boolean teste;
 
 	private BuildableBitmapTextureAtlas mBitmapTextureAtlas;
 
