@@ -28,7 +28,9 @@ public final class Ball extends AnimatedSprite {
 	 * @param dEMO_VELOCITY the dEMO_VELOCITY to set
 	 */
 	public void setDEMO_VELOCITY(float dEMO_VELOCITY) {
+		if(dEMO_VELOCITY > 0){
 		DEMO_VELOCITY = dEMO_VELOCITY;
+		}
 	}
 
 	private final Camera mCamera;
