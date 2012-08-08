@@ -1,7 +1,7 @@
 /**
  * 
  */
-package whs.games.andengine.antsfalling;
+package BKP;
 
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.camera.hud.HUD;
@@ -36,10 +36,6 @@ import org.andengine.util.math.MathUtils;
 import org.andengine.engine.camera.hud.controls.AnalogOnScreenControl;
 import org.andengine.engine.camera.hud.controls.AnalogOnScreenControl.IAnalogOnScreenControlListener;
 import org.andengine.engine.camera.hud.controls.BaseOnScreenControl;
-import org.andengine.extension.physics.box2d.util.Vector2Pool;
-
-import com.badlogic.gdx.math.Vector2;
-
 
 import android.annotation.SuppressLint;
 import android.graphics.Typeface;
@@ -53,22 +49,23 @@ import android.util.DisplayMetrics;
  * @author WiLL
  * 
  */
-public class MainActivity extends SimpleBaseGameActivity {
+public class BKP2MainActivity extends SimpleBaseGameActivity {
 
 	// ===========================================================
 	// Constants
 	// ===========================================================
-	
-	
 
 	// ===========================================================
 	// Fields
 	// ===========================================================
 
-	private BitmapTextureAtlas mBitmapTextureAtlas;
-	private TiledTextureRegion mFaceTextureRegion;
-
 	private static Camera mCamera;
+
+	private BuildableBitmapTextureAtlas mBitmapTextureAtlas;
+
+	private TiledTextureRegion mHelicopterTextureRegion;
+
+	private AnimatedSprite helicopter;
 
 	//Controls
 	private BitmapTextureAtlas mOnScreenControlTexture;
@@ -77,11 +74,6 @@ public class MainActivity extends SimpleBaseGameActivity {
 
 	private final Scene mScene = new Scene();	
 
-	// ===========================================================
-	// Entities
-	// ===========================================================
-	 Ball ball = null;
-	
 	// ===========================================================
 	// Methods for/from SuperClass/Interfaces
 	// ===========================================================
@@ -106,11 +98,26 @@ public class MainActivity extends SimpleBaseGameActivity {
 	protected void onCreateResources() {
 		BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
 
-		//Ball
-		this.mBitmapTextureAtlas = new BitmapTextureAtlas(this.getTextureManager(), 64, 32, TextureOptions.BILINEAR);
-		this.mFaceTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mBitmapTextureAtlas, this, "face_circle_tiled.png", 0, 0, 2, 1);
-		this.mBitmapTextureAtlas.load();
-		
+		this.mBitmapTextureAtlas = new BuildableBitmapTextureAtlas(
+				this.getTextureManager(), 512, 256, TextureOptions.NEAREST);
+		// this.mBitmapTextureAtlas = new
+		// BuildableBitmapTextureAtlas(this.getTextureManager(), 512, 256,
+		// TextureOptions.BILINEAR);
+
+		this.mHelicopterTextureRegion = BitmapTextureAtlasTextureRegionFactory
+				.createTiledFromAsset(this.mBitmapTextureAtlas, this,
+						"helicopter_tiled.png", 2, 2);
+
+		//TODO: Verify that
+		try {
+			this.mBitmapTextureAtlas
+					.build(new BlackPawnTextureAtlasBuilder<IBitmapTextureAtlasSource, BitmapTextureAtlas>(
+							0, 0, 1));
+			this.mBitmapTextureAtlas.load();
+		} catch (TextureAtlasBuilderException e) {
+			Debug.e(e);
+		}
+
 		// Controls
 		this.mOnScreenControlTexture = new BitmapTextureAtlas(
 				this.getTextureManager(), 256, 128, TextureOptions.BILINEAR);
@@ -130,12 +137,24 @@ public class MainActivity extends SimpleBaseGameActivity {
 
 		mScene.setBackground(new Background(0.09804f, 0.6274f, 0.8784f));
 
-		final float centerX = (this.mCamera.getWidth() - this.mFaceTextureRegion.getWidth()) / 2;
-		final float centerY = (this.mCamera.getHeight() - this.mFaceTextureRegion.getHeight()) / 2;
-		ball = new Ball(centerX, centerY, this.mFaceTextureRegion, this.getVertexBufferObjectManager(), mCamera);
+		/* Continuously flying helicopter. */
+		helicopter = new AnimatedSprite(320, 50, this.mHelicopterTextureRegion,
+				this.getVertexBufferObjectManager());
+		helicopter.animate(new long[] { 100, 100 }, 1, 2, true);
 
-		mScene.attachChild(ball);
-				
+		// Amarra mCamera a entidade para segui-la
+		mCamera.setChaseEntity(helicopter);
+
+		helicopter.registerEntityModifier(new LoopEntityModifier(
+				new MoveModifier(10f, helicopter.getX(), 0, helicopter.getY(),
+						mCamera.getHeight()
+								- this.mHelicopterTextureRegion.getHeight())));
+
+		mScene.attachChild(helicopter);
+		
+		final FPSCounter fpsCounter = new FPSCounter();
+		this.mEngine.registerUpdateHandler(fpsCounter);	
+		
 		this.initOnScreenControls();
 
 		return mScene;
@@ -159,10 +178,8 @@ public class MainActivity extends SimpleBaseGameActivity {
 							final float pValueX, final float pValueY) {
 						// final Body carBody = RacerGameActivity.this.mCarBody;
 
-						 final Vector2 velocity = Vector2Pool.obtain(pValueX *
-						 50, pValueY * 50);
-						 
-						 ball.setDEMO_VELOCITY(ball.getDEMO_VELOCITY() + velocity.y);
+						// final Vector2 velocity = Vector2Pool.obtain(pValueX *
+						// 5, pValueY * 5);
 						// carBody.setLinearVelocity(velocity);
 						// Vector2Pool.recycle(velocity);
 
@@ -171,7 +188,9 @@ public class MainActivity extends SimpleBaseGameActivity {
 						// carBody.setTransform(carBody.getWorldCenter(),
 						// rotationInRad);
 
-						// MainActivity.this.scene.setRotation(MathUtils.radToDeg(rotationInRad));
+						BKP2MainActivity.this.helicopter.setRotation(MathUtils
+								.radToDeg(rotationInRad));
+						// BKP2MainActivity.this.scene.setRotation(MathUtils.radToDeg(rotationInRad));
 					}
 
 					@Override
