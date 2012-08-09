@@ -15,6 +15,7 @@ import org.andengine.entity.modifier.MoveModifier;
 import org.andengine.entity.scene.Scene;
 import org.andengine.entity.scene.background.Background;
 import org.andengine.entity.sprite.AnimatedSprite;
+import org.andengine.entity.sprite.TiledSprite;
 import org.andengine.entity.text.Text;
 import org.andengine.entity.util.FPSCounter;
 import org.andengine.entity.util.FPSLogger;
@@ -36,9 +37,16 @@ import org.andengine.util.math.MathUtils;
 import org.andengine.engine.camera.hud.controls.AnalogOnScreenControl;
 import org.andengine.engine.camera.hud.controls.AnalogOnScreenControl.IAnalogOnScreenControlListener;
 import org.andengine.engine.camera.hud.controls.BaseOnScreenControl;
+import org.andengine.extension.physics.box2d.FixedStepPhysicsWorld;
+import org.andengine.extension.physics.box2d.PhysicsConnector;
+import org.andengine.extension.physics.box2d.PhysicsFactory;
+import org.andengine.extension.physics.box2d.PhysicsWorld;
 import org.andengine.extension.physics.box2d.util.Vector2Pool;
 
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Body;
+import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 
 
 import android.annotation.SuppressLint;
@@ -68,8 +76,8 @@ public class MainActivity extends SimpleBaseGameActivity {
 	private BitmapTextureAtlas mBitmapTextureAtlas;
 	private TiledTextureRegion mFaceTextureRegion;
 
-	private static Camera mCamera;
-
+	private static Camera mCamera;	
+	
 	//Controls
 	private BitmapTextureAtlas mOnScreenControlTexture;
 	private ITextureRegion mOnScreenControlBaseTextureRegion;
@@ -81,7 +89,17 @@ public class MainActivity extends SimpleBaseGameActivity {
 	// Entities
 	// ===========================================================
 	 Ball ball = null;
+	 
+	 //Car
+	 private static final int CAR_SIZE = 16;
 	
+	 private BitmapTextureAtlas mVehiclesTexture;
+		private TiledTextureRegion mVehiclesTextureRegion;
+	 
+	 private PhysicsWorld mPhysicsWorld;	 
+	 
+		private Body mCarBody;
+		private TiledSprite mCar;
 	// ===========================================================
 	// Methods for/from SuperClass/Interfaces
 	// ===========================================================
@@ -106,6 +124,12 @@ public class MainActivity extends SimpleBaseGameActivity {
 	protected void onCreateResources() {
 		BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
 
+		//Car
+		this.mVehiclesTexture = new BitmapTextureAtlas(this.getTextureManager(), 128, 16, TextureOptions.BILINEAR);
+		this.mVehiclesTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mVehiclesTexture, this, "vehicles.png", 0, 0, 6, 1);
+		this.mVehiclesTexture.load();
+
+		
 		//Ball
 		this.mBitmapTextureAtlas = new BitmapTextureAtlas(this.getTextureManager(), 64, 32, TextureOptions.BILINEAR);
 		this.mFaceTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mBitmapTextureAtlas, this, "face_circle_tiled.png", 0, 0, 2, 1);
@@ -130,14 +154,20 @@ public class MainActivity extends SimpleBaseGameActivity {
 
 		mScene.setBackground(new Background(0.09804f, 0.6274f, 0.8784f));
 
+		//PhysicsWorld
+		this.mPhysicsWorld = new FixedStepPhysicsWorld(30, new Vector2(0, 0), false, 8, 1);
+		
 		final float centerX = (this.mCamera.getWidth() - this.mFaceTextureRegion.getWidth()) / 2;
 		final float centerY = (this.mCamera.getHeight() - this.mFaceTextureRegion.getHeight()) / 2;
 		ball = new Ball(centerX, centerY, this.mFaceTextureRegion, this.getVertexBufferObjectManager(), mCamera);
 
 		mScene.attachChild(ball);
 				
+		this.initCar();
 		this.initOnScreenControls();
 
+		this.mScene.registerUpdateHandler(this.mPhysicsWorld);
+		
 		return mScene;
 
 	}
@@ -159,18 +189,23 @@ public class MainActivity extends SimpleBaseGameActivity {
 							final float pValueX, final float pValueY) {
 						// final Body carBody = RacerGameActivity.this.mCarBody;
 
-						 final Vector2 velocity = Vector2Pool.obtain(pValueX *
+						 final Vector2 velocity2 = Vector2Pool.obtain(pValueX *
 						 50, pValueY * 50);
 						 
-						 ball.setDEMO_VELOCITY(ball.getDEMO_VELOCITY() + velocity.y);
-						// carBody.setLinearVelocity(velocity);
-						// Vector2Pool.recycle(velocity);
+						 ball.setDEMO_VELOCITY(ball.getDEMO_VELOCITY() + velocity2.y);
+												
+						final Body carBody = MainActivity.this.mCarBody;
 
-						final float rotationInRad = (float) Math.atan2(
-								-pValueX, pValueY);
-						// carBody.setTransform(carBody.getWorldCenter(),
-						// rotationInRad);
+						final Vector2 velocity = Vector2Pool.obtain(pValueX * 5, pValueY * 5);
+						carBody.setLinearVelocity(velocity);
+						Vector2Pool.recycle(velocity);
 
+						final float rotationInRad = (float)Math.atan2(-pValueX, pValueY);
+						carBody.setTransform(carBody.getWorldCenter(), rotationInRad);
+
+						MainActivity.this.mCar.setRotation(MathUtils.radToDeg(rotationInRad));
+					
+						
 						// MainActivity.this.scene.setRotation(MathUtils.radToDeg(rotationInRad));
 					}
 
@@ -190,6 +225,20 @@ public class MainActivity extends SimpleBaseGameActivity {
 
 		this.mScene.setChildScene(analogOnScreenControl);
 	}
+	
+	private void initCar() {
+		this.mCar = new TiledSprite(20, 20, CAR_SIZE, CAR_SIZE, this.mVehiclesTextureRegion, this.getVertexBufferObjectManager());
+		this.mCar.setCurrentTileIndex(0);
+
+		final FixtureDef carFixtureDef = PhysicsFactory.createFixtureDef(1, 0.5f, 0.5f);
+		this.mCarBody = PhysicsFactory.createBoxBody(this.mPhysicsWorld, this.mCar, BodyType.DynamicBody, carFixtureDef);
+
+		this.mPhysicsWorld.registerPhysicsConnector(new PhysicsConnector(this.mCar, this.mCarBody, true, false));
+
+		this.mScene.attachChild(this.mCar);
+	}
+
+	
 	// ===========================================================
 	// Inner and Anonymous Classes
 	// ===========================================================
