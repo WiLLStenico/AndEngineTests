@@ -43,6 +43,9 @@ import org.andengine.extension.physics.box2d.PhysicsFactory;
 import org.andengine.extension.physics.box2d.PhysicsWorld;
 import org.andengine.extension.physics.box2d.util.Vector2Pool;
 
+import whs.games.andengine.antsfalling.enemies.BaseEnemy;
+import whs.games.andengine.antsfalling.textures.TiledTextureRegions;
+
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
@@ -90,6 +93,8 @@ public class MainActivity extends SimpleBaseGameActivity {
 	// ===========================================================
 	 Ball ball = null;
 	 
+	 private TiledTextureRegions testeTexture;
+	 
 	 //Car
 	 private static final int CAR_SIZE = 16;
 	
@@ -135,6 +140,8 @@ public class MainActivity extends SimpleBaseGameActivity {
 		this.mFaceTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mBitmapTextureAtlas, this, "face_circle_tiled.png", 0, 0, 2, 1);
 		this.mBitmapTextureAtlas.load();
 		
+		testeTexture = new TiledTextureRegions(this);
+		
 		// Controls
 		this.mOnScreenControlTexture = new BitmapTextureAtlas(
 				this.getTextureManager(), 256, 128, TextureOptions.BILINEAR);
@@ -161,6 +168,13 @@ public class MainActivity extends SimpleBaseGameActivity {
 		final float centerY = (this.mCamera.getHeight() - this.mFaceTextureRegion.getHeight()) / 2;
 		ball = new Ball(centerX, centerY, this.mFaceTextureRegion, this.getVertexBufferObjectManager(), mCamera);
 
+		BaseEnemy testeEnemy = new BaseEnemy(centerX, centerY, testeTexture.GetBallTextureRegionBall(), this.getVertexBufferObjectManager());
+		testeEnemy.animate(200);
+		
+		
+		mScene.attachChild(testeEnemy);
+		
+		
 		mScene.attachChild(ball);
 				
 		this.initCar();
