@@ -76,8 +76,8 @@ public class MainActivity extends SimpleBaseGameActivity {
 	// Fields
 	// ===========================================================
 
-	private BitmapTextureAtlas mBitmapTextureAtlas;
-	private TiledTextureRegion mFaceTextureRegion;
+//	private BitmapTextureAtlas mBitmapTextureAtlas;
+//	private TiledTextureRegion mFaceTextureRegion;
 
 	private static Camera mCamera;	
 	
@@ -91,7 +91,7 @@ public class MainActivity extends SimpleBaseGameActivity {
 	// ===========================================================
 	// Entities
 	// ===========================================================
-	 Ball ball = null;
+	 //Ball ball = null;
 	 
 	 private TiledTextureRegions testeTexture;
 	 
@@ -135,10 +135,10 @@ public class MainActivity extends SimpleBaseGameActivity {
 		this.mVehiclesTexture.load();
 
 		
-		//Ball
-		this.mBitmapTextureAtlas = new BitmapTextureAtlas(this.getTextureManager(), 64, 32, TextureOptions.BILINEAR);
-		this.mFaceTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mBitmapTextureAtlas, this, "face_circle_tiled.png", 0, 0, 2, 1);
-		this.mBitmapTextureAtlas.load();
+//		//Ball
+//		this.mBitmapTextureAtlas = new BitmapTextureAtlas(this.getTextureManager(), 64, 32, TextureOptions.BILINEAR);
+//		this.mFaceTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mBitmapTextureAtlas, this, "face_circle_tiled.png", 0, 0, 2, 1);
+//		this.mBitmapTextureAtlas.load();
 		
 		testeTexture = new TiledTextureRegions(this);
 		
@@ -164,18 +164,45 @@ public class MainActivity extends SimpleBaseGameActivity {
 		//PhysicsWorld
 		this.mPhysicsWorld = new FixedStepPhysicsWorld(30, new Vector2(0, 0), false, 8, 1);
 		
-		final float centerX = (this.mCamera.getWidth() - this.mFaceTextureRegion.getWidth()) / 2;
-		final float centerY = (this.mCamera.getHeight() - this.mFaceTextureRegion.getHeight()) / 2;
-		ball = new Ball(centerX, centerY, this.mFaceTextureRegion, this.getVertexBufferObjectManager(), mCamera);
+//		final float centerX = (this.mCamera.getWidth() - this.mFaceTextureRegion.getWidth()) / 2;
+//		final float centerY = (this.mCamera.getHeight() - this.mFaceTextureRegion.getHeight()) / 2;
+		
+		final float centerX = (this.mCamera.getWidth()) / 2;
+		final float centerY = (this.mCamera.getHeight()) / 2;
+		//ball = new Ball(centerX, centerY, this.mFaceTextureRegion, this.getVertexBufferObjectManager(), mCamera);
 
-		BaseEnemy testeEnemy = new BaseEnemy(centerX, centerY, testeTexture.GetBallTextureRegionBall(), this.getVertexBufferObjectManager());
-		testeEnemy.animate(200);
+//		BaseEnemy testeEnemy = new BaseEnemy(centerX - 30, centerY, testeTexture.GetBallTextureRegion(), this.getVertexBufferObjectManager());
+//		testeEnemy.animate(200);
+		
+		BaseEnemy testeSmurf = new BaseEnemy(centerX, centerY, testeTexture.GetSmurfTextureRegion(), this.getVertexBufferObjectManager());
+		testeSmurf.animate(50);
+		mScene.attachChild(testeSmurf);
+		
+		BaseEnemy testeMario = new BaseEnemy(centerX - 30, centerY, testeTexture.GetMarioTextureRegion(), this.getVertexBufferObjectManager());
+		
+		//testeSmurf.setScale(2,2);
+		testeMario.setScale(2,2);
+		
+		testeMario.animate(new long[]{200,200 }, new int[] { 1,4}, true);
+
+		mScene.attachChild(testeMario);
 		
 		
-		mScene.attachChild(testeEnemy);
+		
+BaseEnemy testeMario2 = new BaseEnemy(centerX - 80, centerY, testeTexture.GetMarioTextureRegion(), this.getVertexBufferObjectManager());
+		
+		//testeSmurf.setScale(2,2);
+		testeMario2.setScale(2,2);
+		
+		testeMario2.animate(new long[]{200,200,200,200 }, new int[] { 11,4,12,4}, true);
+
+		mScene.attachChild(testeMario2);
 		
 		
-		mScene.attachChild(ball);
+//		mScene.attachChild(testeEnemy);
+		
+		
+		//mScene.attachChild(ball);
 				
 		this.initCar();
 		this.initOnScreenControls();
@@ -206,7 +233,7 @@ public class MainActivity extends SimpleBaseGameActivity {
 						 final Vector2 velocity2 = Vector2Pool.obtain(pValueX *
 						 50, pValueY * 50);
 						 
-						 ball.setDEMO_VELOCITY(ball.getDEMO_VELOCITY() + velocity2.y);
+				//		 ball.setDEMO_VELOCITY(ball.getDEMO_VELOCITY() + velocity2.y);
 												
 						final Body carBody = MainActivity.this.mCarBody;
 

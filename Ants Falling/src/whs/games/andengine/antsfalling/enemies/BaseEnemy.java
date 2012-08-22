@@ -23,7 +23,7 @@ public class BaseEnemy extends AnimatedSprite {
 	
 	public BaseEnemy(final float pX, final float pY, final TiledTextureRegion pTextureRegion, final VertexBufferObjectManager pVertexBufferObjectManager) {
 		super(pX, pY, pTextureRegion, pVertexBufferObjectManager);		
-		BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
+		//BitmapTextureAtlasTextureRegionFactory.setAssetBasePath("gfx/");
 	}
 	
 	
