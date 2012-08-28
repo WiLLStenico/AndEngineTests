@@ -16,6 +16,7 @@ import org.andengine.entity.scene.Scene;
 import org.andengine.entity.scene.background.Background;
 import org.andengine.entity.sprite.AnimatedSprite;
 import org.andengine.entity.sprite.TiledSprite;
+import org.andengine.entity.sprite.vbo.ITiledSpriteVertexBufferObject;
 import org.andengine.entity.text.Text;
 import org.andengine.entity.util.FPSCounter;
 import org.andengine.entity.util.FPSLogger;
@@ -44,6 +45,11 @@ import org.andengine.extension.physics.box2d.PhysicsWorld;
 import org.andengine.extension.physics.box2d.util.Vector2Pool;
 
 import whs.games.andengine.antsfalling.enemies.BaseEnemy;
+
+import whs.games.andengine.antsfalling.enemies.EntityTiledTextureRegion;
+import whs.games.andengine.antsfalling.enemies.EntityType;
+import whs.games.andengine.antsfalling.enemies.ManagerEntitiesTextures;
+import whs.games.andengine.antsfalling.enemies.Smurf;
 import whs.games.andengine.antsfalling.textures.TiledTextureRegions;
 
 import com.badlogic.gdx.math.Vector2;
@@ -89,7 +95,7 @@ public class MainActivity extends SimpleBaseGameActivity {
 	private final Scene mScene = new Scene();	
 
 	// ===========================================================
-	// Entities
+	// ManagerEntitiesTextures
 	// ===========================================================
 	 //Ball ball = null;
 	 
@@ -105,6 +111,10 @@ public class MainActivity extends SimpleBaseGameActivity {
 	 
 		private Body mCarBody;
 		private TiledSprite mCar;
+		
+		
+		private ManagerEntitiesTextures textures;
+		
 	// ===========================================================
 	// Methods for/from SuperClass/Interfaces
 	// ===========================================================
@@ -133,7 +143,6 @@ public class MainActivity extends SimpleBaseGameActivity {
 		this.mVehiclesTexture = new BitmapTextureAtlas(this.getTextureManager(), 128, 16, TextureOptions.BILINEAR);
 		this.mVehiclesTextureRegion = BitmapTextureAtlasTextureRegionFactory.createTiledFromAsset(this.mVehiclesTexture, this, "vehicles.png", 0, 0, 6, 1);
 		this.mVehiclesTexture.load();
-
 		
 //		//Ball
 //		this.mBitmapTextureAtlas = new BitmapTextureAtlas(this.getTextureManager(), 64, 32, TextureOptions.BILINEAR);
@@ -141,6 +150,12 @@ public class MainActivity extends SimpleBaseGameActivity {
 //		this.mBitmapTextureAtlas.load();
 		
 		testeTexture = new TiledTextureRegions(this);
+		
+		textures = new ManagerEntitiesTextures(this);
+		textures.LoadResources(EntityType.SMURF);
+				
+		
+		//aaa.LoadResources();
 		
 		// Controls
 		this.mOnScreenControlTexture = new BitmapTextureAtlas(
@@ -174,8 +189,8 @@ public class MainActivity extends SimpleBaseGameActivity {
 //		BaseEnemy testeEnemy = new BaseEnemy(centerX - 30, centerY, testeTexture.GetBallTextureRegion(), this.getVertexBufferObjectManager());
 //		testeEnemy.animate(200);
 		
-		BaseEnemy testeSmurf = new BaseEnemy(centerX, centerY, testeTexture.GetSmurfTextureRegion(), this.getVertexBufferObjectManager());
-		testeSmurf.animate(50);
+		BaseEnemy testeSmurf = new BaseEnemy(centerX, centerY, textures.getTextureRegion(EntityType.SMURF), this.getVertexBufferObjectManager());
+		testeSmurf.animate(10);
 		mScene.attachChild(testeSmurf);
 		
 		BaseEnemy testeMario = new BaseEnemy(centerX - 30, centerY, testeTexture.GetMarioTextureRegion(), this.getVertexBufferObjectManager());
@@ -187,9 +202,26 @@ public class MainActivity extends SimpleBaseGameActivity {
 
 		mScene.attachChild(testeMario);
 		
+		//AnimatedSprite w =  aaa.GetSprite(centerX, centerY-160);
 		
+		Smurf smurf = new Smurf(centerX - 150, centerY - 150, textures.getTextureRegion(EntityType.SMURF), this.getVertexBufferObjectManager()); 
 		
-BaseEnemy testeMario2 = new BaseEnemy(centerX - 80, centerY, testeTexture.GetMarioTextureRegion(), this.getVertexBufferObjectManager());
+		smurf.walk();				
+		
+
+		Smurf smurf3 = new Smurf(centerX - 150, centerY, textures.getTextureRegion(EntityType.SMURF), this.getVertexBufferObjectManager()); 		
+		smurf3.walk();
+		
+		smurf3.setScale(0.5f, 0.5f);
+		
+		Smurf smurf2 = new Smurf(centerX - 150, centerY - 350, textures.getTextureRegion(EntityType.SMURF), this.getVertexBufferObjectManager()); 		
+		smurf2.run();
+		mScene.attachChild(smurf3);
+		
+		mScene.attachChild(smurf);
+		mScene.attachChild(smurf2);
+		
+		BaseEnemy testeMario2 = new BaseEnemy(centerX - 80, centerY, testeTexture.GetMarioTextureRegion(), this.getVertexBufferObjectManager());
 		
 		//testeSmurf.setScale(2,2);
 		testeMario2.setScale(2,2);

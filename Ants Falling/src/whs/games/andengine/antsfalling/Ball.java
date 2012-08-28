@@ -5,6 +5,7 @@ package whs.games.andengine.antsfalling;
 
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.handler.physics.PhysicsHandler;
+import org.andengine.entity.Entity;
 import org.andengine.entity.sprite.AnimatedSprite;
 import org.andengine.opengl.texture.region.TiledTextureRegion;
 import org.andengine.opengl.vbo.VertexBufferObjectManager;
@@ -41,6 +42,7 @@ public final class Ball extends AnimatedSprite {
 		this.mPhysicsHandler = new PhysicsHandler(this);
 		this.registerUpdateHandler(this.mPhysicsHandler);
 		this.mPhysicsHandler.setVelocity(DEMO_VELOCITY, DEMO_VELOCITY);
+		
 	}
 
 	@Override
